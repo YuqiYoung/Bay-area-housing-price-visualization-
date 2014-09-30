@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script src="http://code.jquery.com/jquery-1.3.2.min.js"></script>
+	<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
+	<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=visualization"></script>	
+    <script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/trunk/infobubble/src/infobubble.js"></script>
+	<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+	<script src="d3.layout.cloud.js"></script>	
+	<script type="text/javascript" src="http://geoxml3.googlecode.com/svn/branches/polys/geoxml3.js"></script>
+	<script type="text/javascript" src="http://geoxml3.googlecode.com/svn/trunk/ProjectedOverlay.js"></script>
+    <script type="text/javascript" src="ppsHeatmap.json"></script>
+    <script type="text/javascript" src="newBayArea.kml"></script>
+	<script type="text/javascript" src="Raw.json"></script>
+	<script type="text/javascript" src="month.json"></script>
+	<script type="text/javascript" src="ppsInfoMap.json"></script>
+</head>
+
+<style>
+body
+{
+	position:absolute;
+	top: 0%;
+	right:0;
+	left:0;
+	width:99%;
+	height:650px;
+	
+}
+
+ul
+{
+	list-style-type:none;
+	margin:0;
+	padding:0;
+	overflow:hidden;
+}
+
+li
+{
+	float:left;
+}
+
+a:link,a:visited
+{
+	display:block;
+	margin:0px;
+	width:120px;
+	height:20px;
+	font-weight:bold;
+	color:#FFFFFF;
+	background-color:#708090;
+	text-align:center;
+	padding:4px;
+	text-decoration:none;
+	text-transform:uppercase;
+}
+
+a:hover,a:active
+{
+	background-color:#9BA6B1;
+}
+
+button{
+	width:80px;
+	height:20px
+}
+
+div.tooltip {   
+  position: absolute;           
+  text-align: left;           
+  width: 130px;                  
+  height: 70px;                 
+  padding: 7px;             
+  font: 12px sans-serif;        
+  background: lightsteelblue; 
+  border-style:outset;  
+  border: 3px;      
+  border-radius: 8px;  
+  border-color:black;         
+  pointer-events: none;         
+}
+
+div.mapTooltip {   
+  position: absolute;           
+  text-align: left;           
+  width: 140px;                  
+  height: 40px;                 
+  padding: 7px;             
+  font: 12px sans-serif;        
+  background: lightsteelblue; 
+  border-style:outset;  
+  border: 3px;      
+  border-radius: 8px;  
+  border-color:black;         
+  pointer-events: none;         
+}
+
+
+.controlButton {
+	background-color:#FFFFFF;
+	border-radius:3px;
+	border:1px solid lightsteelblue;
+	display:inline-block;
+	cursor:pointer;
+	color:lightsteelblue;
+	font-family:sans-serif;
+	font-size:13px;
+	text-transform:uppercase;
+    font-weight:bold;
+    opacity:1;
+}
+
+.controlButton:hover
+{
+	background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #bc3315), color-stop(1, #d0451b));
+	background:-moz-linear-gradient(top, #bc3315 5%, #d0451b 100%);
+	background:-webkit-linear-gradient(top, #bc3315 5%, #d0451b 100%);
+	background:-o-linear-gradient(top, #bc3315 5%, #d0451b 100%);
+	background:-ms-linear-gradient(top, #bc3315 5%, #d0451b 100%);
+	background:linear-gradient(to bottom, #bc3315 5%, #d0451b 100%);
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#bc3315', endColorstr='#d0451b',GradientType=0);
+	background-color:#bc3315;
+	opacity:1;
+}
+
+.outlineElement
+{
+  outline: 1px solid #c00;
+}
+
+.stations, .stations svg
+{
+  position: absolute;
+}
+
+.stations svg 
+{
+  width: 60px;
+  height: 20px;
+  padding-right: 100px;
+  font: 10px sans-serif;
+}
+
+.axis path { fill:  #556B12; }
+
+.axis line
+{
+    fill:  none;
+    stroke-color: #556B12;
+    shape-rendering: crispEdges;
+}
+
+.axis text
+{
+    font-family: sans-serif;
+    color: #556B12;
+    font-size: 15px;
+}
+
+#main
+{
+    min-width: 100%;
+    max-width: 100%;
+    height: 100%;
+	margin: 0px auto;
+  	padding: 0px;
+  	border: solid #708090 5px;
+  	-webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+	overflow:auto visible;
+	background-color: #F5FFFA;
+}
+
+#BubbleChart
+{
+	float:left;
+	height: 100%;
+ 	width: 59.5%;
+  	margin: 0;
+	border: solid #708090 5px;
+	border-top:none;
+	border-bottom:none;
+	border-left: none;
+}
+
+#subChart
+{
+	float:right;
+	height: 100%;
+ 	min-width: 40%;
+ 	max-width: 40%;
+  	margin: 0;
+  	padding:0;
+}
+#CountyText{
+	height: 35%;
+	width: 100%;
+	margin: 0;
+	padding:0;
+	border: solid #708090 5px;
+	border-top:none;
+	border-right:none;
+	border-left: none;
+}
+
+#RegionMap
+{
+	margin: 0;
+	padding:0;
+	height: 64%;
+	width: 100%;
+}
+
+#selectOpt:visited,#selectOpt,.ControlTag:visited,.ControlTag
+{
+	display:block;
+	margin:0px;
+	width:150px;
+	height:20px;
+	font-weight:bold;
+	color:#FFFFFF;
+	background-color:#708090;
+	text-align:center;
+	padding:4px;
+	text-decoration:none;
+	text-transform:uppercase;
+	opacity:1.0;
+}
+
+#selectOpt:hover,#selectOpt:active,.ControlTag:hover,.ControlTag:active
+{
+	background-color:#9BA6B1;
+}
+</style>
+
+<body>
+	<div id="Nav">
+		<ul>
+		<li><a href="BubblePage.html">BubbleChart</a></li>
+		<li><a href="InfoMap.html">InfoMap</a></li>
+		<li id="selectOpt"></li>
+		<li class="ControlTag" id="myButton">play</li>
+		<li class="ControlTag" id="boundaryButton">hide boundary</li>
+		<li><a href="Help.html" class="ControlTag">help</a></li>
+		</ul>
+	</div>
+	<div id="main">
+		<div id="BubbleChart"></div>
+		<div id="subChart">
+			<div id="CountyText"></div>
+			<div id="RegionMap"></div>
+		</div>
+	</div>
+</body>
+
+<script>
+	var map_county=["Alameda County","Contra Costa County","Marin County","Napa County","Sonoma County","San Mateo County","Santa Clara County","Solano County","San Francisco County"];
+	var county=["Alameda","Contra Costa","Marin","Napa","Sonoma","San Mateo","Santa Clara","Solano","San Francisco"];
+	var indexDate=1;//for record date
+	var timer;	//for timeout
+	var initial_bubble=[
+		 {"month": "2003-04-01"},
+		 {"county":"Alameda","mean_price":417792.307692308,"mean_sqft":5251.37262357414,"sale_num":329},
+		 {"county":"Contra Costa","mean_price":386597.112860892,"mean_sqft":6092.07260726073,"sale_num":392},
+		 {"county":"Marin","mean_price":609474.358974359,"mean_sqft":6390.07317073171,"sale_num":45},
+		 {"county":"Napa","mean_price":400257.575757576,"mean_sqft":6261.6875,"sale_num":34},
+		 {"county":"Sonoma","mean_price":308329.032258065,"mean_sqft":6001.71140939597,"sale_num":155},		 
+		 {"county":"San Mateo","mean_price":614067.164179104,"mean_sqft":5567.98507462687,"sale_num":144},
+		 {"county":"Santa Clara","mean_price":500123.106060606,"mean_sqft":5314.93308550186,"sale_num":286},
+		 {"county":"Solano","mean_price":308329.032258065,"mean_sqft":6001.71140939597,"sale_num":155},
+		 {"county":"San Francisco","mean_price":583062.5,"mean_sqft":2618.57894736842,"sale_num":33}
+		 
+	];
+	var circle=[{"cx":0,"cy":0,"r":0}];
+	var gradient = [
+	    'rgba(0, 255, 255, 0)',
+	    'rgba(0, 255, 255, 1)',
+	    'rgba(0, 191, 255, 1)',
+	    'rgba(0, 127, 255, 1)',
+	    'rgba(0, 63, 255, 1)',
+	    'rgba(0, 0, 255, 1)',
+	    'rgba(0, 0, 223, 1)',
+	    'rgba(0, 0, 191, 1)',
+	    'rgba(0, 0, 159, 1)',
+	    'rgba(0, 0, 127, 1)',
+	    'rgba(63, 0, 91, 1)',
+	    'rgba(127, 0, 63, 1)',
+	    'rgba(191, 0, 31, 1)',
+	    'rgba(255, 0, 0, 1)'
+  ];
+	
+	var max_sale_num=300;
+	var min_sale_num=0;
+	var interval_sale_num=max_sale_num-min_sale_num;
+	
+	var margin = {top: 10, right: 20, bottom: 20, left: 20},
+     	width = document.body.clientWidth*0.6 - margin.left - margin.right,
+     	height = document.body.clientHeight - margin.top - margin.bottom;
+     	
+	var padding = 20;
+	var color = d3.scale.ordinal()
+   						.range(["#669900","#FF3300", "#FF9900", "#CC3399", "#9966FF", "#0000FF", "#0099CC", "#006666","#009933"]);
+	var squareMax=7000.0;
+	var squareMin=2000.0;
+	var square= 1000;
+	var squareInterval=squareMax-squareMin;
+		
+	var format=d3.time.format("%Y-%m-%d");
+	var new_format=d3.time.format("%Y-%m");
+	var x = d3.scale.linear();
+		x.domain([10,3096]);
+		x.range([padding, width-padding]);    	
+	var y = d3.scale.linear();
+		y.domain([300000,800000]);
+	    y.range([height, 0]);
+	
+	var xAxis = d3.svg.axis()
+   				  .scale(x)
+    			  .orient("bottom")
+    			  .ticks(10);//change the axie interval
+	var yAxis = d3.svg.axis()
+    			  .scale(y)
+    			  .orient("left")
+    			  .tickFormat(d3.format(".2s"));    			  
+    var bubbleSVG = d3.select("#BubbleChart").append("svg")
+   				.attr("width", width + margin.left + margin.right)
+    			.attr("height", height + margin.top + margin.bottom)
+  				.append("g")
+    			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+     
+    var select = document.createElement("select");
+    select.setAttribute("id","dateSelect");
+     $(select).css("height","22px");
+    $(select).css("font-size","13px");
+	//console.log(month.length);
+	for(var i=0;i<month.length;i++)
+	{
+	 	select.options[i]= new Option(new_format(format.parse(month[i].month)),i);   
+	}
+	select.size = 1;
+    document.getElementById("selectOpt").appendChild(select);	  	
+    $("select").bind("change",changeDate);
+    $("#myButton").bind("click",pressControlButton);
+    $("#boundaryButton").bind("click",pressBoundaryButton);
+    
+	var map = new google.maps.Map(d3.select("#RegionMap").node(),
+	 		{
+				  zoom: 10,
+				  center: new google.maps.LatLng(37.909387, -122.303871),
+				  mapTypeId: google.maps.roadmap,
+				  scrollwheel: false,
+				  draggable: false,
+				  panControl: true,
+			      zoomControl: true,
+			      scaleControl: false,
+			      disableDefaultUI: false
+			});
+			
+	var styles = [
+				  {
+				    stylers: [
+				      { hue: "#00ffe6" },
+				      { saturation: -20 }
+				    ]	
+				  },{
+				    featureType: "road",
+				    elementType: "geometry",
+				    stylers: [
+				      { lightness: 100 },
+				      { visibility: "simplified" }
+				    ]
+				  },{
+				    featureType: "road",
+				    elementType: "labels",
+				    stylers: [
+				      { visibility: "off" }
+				    ]
+				  },{
+					    featureType: "poi.business",
+					    elementType: "labels",
+					    stylers: [
+					      { visibility: "on" }
+					    ]
+					  }
+				];
+	
+	map.setOptions({styles: styles});
+	
+	var highlightOptions = { fillColor: "red", strokeColor: "#ff9900", fillOpacity: 0.7, strokeWeight: 10 };
+	var normalOptions = { fillColor: "red", strokeColor: "#ff9900", fillOpacity: 0.0, strokeWeight: 2 };
+	var ib = new InfoBubble({
+		          shadowStyle: 0,
+		          padding:10,
+		          backgroundColor: '#E0FFFF',
+		          borderRadius: 4,
+		          arrowSize: 10,
+		          borderWidth: 1,
+		          borderColor: 'black',
+		          minWidth:  150,
+				  maxWidth:  150,
+				  minHeight: 100,
+				  maxHeight: 100,
+		          disableAutoPan: true,
+		          hideCloseButton: true,
+		          arrowPosition: 10,
+		          arrowStyle: 2
+		        });
+	var myParser = new geoXML3.parser({
+		map: map,
+		singleInfoWindow:true,
+		suppressInfoWindows: true,
+		afterParse: useTheData});
+    myParser.parse('newBayArea.kml');
+    
+	//var overlay = new google.maps.OverlayView();
+	var heatmap;
+    draw_BubbleCoordinate();
+    draw_InitBubble();
+   	initWordText(draw);
+   	initHeatmap(indexDate);
+   	//drawInitGeoMap(ppsMap[0]);
+    //console.log(county[0]);
+    //console.log(housing_bubble[0].month);
+    //console.log(month[0].month);
+    function showHelpWindow()
+    {
+    	window.open("test.jpg","HELP","width=400px,height=400px,menubar=no,toolbar=no,location=no,directories=no,status=no,scrollbars=no,resizable=yes");
+    }
+    
+    function pressControlButton()
+    {
+    	if(this.innerHTML=="play")
+    	{
+    		begin();
+    		this.innerHTML="pause";
+    	}
+    	else
+    	{
+    		stop();
+    		this.innerHTML="play";
+    	}
+    }
+    
+    function pressBoundaryButton()
+    {
+    	if(this.innerHTML=="show boundary")
+    	{
+    		myParser.showDocument(myParser.docs.placemarks);
+    		//myParser.parse('newBayArea.kml');
+    		this.innerHTML="hide boundary";
+    	}
+    	else
+    	{
+    		myParser.hideDocument(myParser.docs.placemarks);
+    		//myParser.parseKmlString('');
+    		this.innerHTML="show boundary";
+    	}
+    }
+    
+
+	
+	function initHeatmap(index)
+	{
+		heatmapData=[];
+		for(var i=0;i<ppsHeatmap[index].length;i++)
+		{
+			var latLng = new google.maps.LatLng(ppsHeatmap[index][i].lat,ppsHeatmap[index][i].long);
+	 		var magnitude = ppsHeatmap[index][i].price_per_square;
+	 		 //console.log(Math.log(magnitude)/Math.log(18000)*1);
+	 		var weightedLoc = {
+	      		location: latLng,
+	      		weight: Math.log(magnitude)/Math.log(18000)*1};
+	      	heatmapData.push(weightedLoc);
+		}
+		
+		heatmap = new google.maps.visualization.HeatmapLayer({
+									    data: heatmapData,
+									    gradient:gradient,
+									    maxIntensity:1,
+									    dissipating: true,
+									    radius:2.7,
+									    opacity:0.6,
+									    map: map
+									  });
+									 
+	}
+	
+	function renderHeatmap(index)
+	{
+		heatmapData=[];
+		for(var i=0;i<ppsHeatmap[index].length;i++)
+		{
+			var latLng = new google.maps.LatLng(ppsHeatmap[index][i].lat,ppsHeatmap[index][i].long);
+	 		var magnitude = ppsHeatmap[index][i].price_per_square;
+	 		var weightedLoc = {
+	      		location: latLng,
+	      		weight: Math.log(magnitude)/Math.log(18000)*1};
+	      	heatmapData.push(weightedLoc);
+		}
+		//console.log( Math.log2(2));
+		heatmap.setData(heatmapData);
+	}
+    
+    function changeDate()
+	{
+  		var myselect = document.getElementById("dateSelect");
+  		var seq=myselect.options[myselect.selectedIndex].value;
+    	//document.getElementById("year").innerHTML="Year "+myselect.options[myselect.selectedIndex].text;
+    	indexDate=Number(seq);
+    	initial_bubble[0].month=housing_bubble[Number(seq)].month;
+    	for(var i=0;i<9;i++)
+    	{
+    		var county_name=county[i];
+    		//console.log(String(county_name));
+    		initial_bubble[i+1].mean_price=housing_bubble[Number(seq)][String(county_name)].mean_price;
+   			initial_bubble[i+1].mean_sqft=housing_bubble[Number(seq)][String(county_name)].mean_sqft;
+   			initial_bubble[i+1].sale_num=housing_bubble[Number(seq)][String(county_name)].sale_num;
+    	}
+    	update_Bubble(initial_bubble);
+    	renderHeatmap(indexDate);
+    	initWordText(updateDraw);
+	}
+
+	function stop()
+	{	
+		window.clearInterval(timer);
+     	     	timer=null;
+	}
+    
+    function begin()
+    {
+    	timer= window.setInterval(timecount,1000);
+    }
+
+	function timecount()
+	{
+			//console.log(indexDate+housing_bubble[Number(indexDate)].month);
+     		initial_bubble[0].month=housing_bubble[Number(indexDate)].month;
+    		for(var i=0;i<9;i++)
+    		{
+	    		var county_name=county[i];
+	    		//console.log(String(county_name));
+	    		initial_bubble[i+1].mean_price=housing_bubble[Number(indexDate)][String(county_name)].mean_price;
+	   			initial_bubble[i+1].mean_sqft=housing_bubble[Number(indexDate)][String(county_name)].mean_sqft;
+	   			initial_bubble[i+1].sale_num=housing_bubble[Number(indexDate)][String(county_name)].sale_num;
+    		}
+		     update_Bubble(initial_bubble);
+		     initWordText(updateDraw);
+		     renderHeatmap(indexDate);
+     	     indexDate=indexDate+1;
+     	     if(indexDate==38)
+     	     {
+     	     	window.clearInterval(timer);
+     	     	timer=null;
+     	     	indexDate=0;
+     	     }   	
+	}
+        			
+	function draw_BubbleCoordinate()
+	{
+		
+		 bubbleSVG.append("g")
+     		.attr("class", "axis")
+      		.attr("transform", "translate(0," + (height-padding) + ")")
+      		.call(xAxis)
+      		.append("text")
+        	.style("text-anchor", "middle")
+			.attr("dx", "41.5em")
+        	.attr("dy", "0em")
+        	.text("sale numbers")
+        	.attr("transform", "rotate(0)");
+
+  		bubbleSVG.append("g")
+      	   .attr("class", "axis")
+      	   .attr("transform", "translate(" + (padding + 10) + ",0)")
+      	   .call(yAxis)
+    	   .append("text")
+      	   .attr("transform", "rotate(-90)")
+      	   //.attr("y", 10)
+      	   .attr("dx", "-3.2em")
+     	   .attr("dy", ".80em")
+           .style("text-anchor", "middle")
+           .text("average_price");
+           
+        bubbleSVG.append("g").selectAll("rect").data(initial_bubble.slice(1))
+        		 .enter()
+      			 .append("rect")
+      			 .attr("width", 30)
+      			 .attr("height", 15)
+				 .attr("x", 600)
+        		 .attr("y", function(d,i){ return i*20+10;})
+        		 .style("fill", function(d) { return color(county.indexOf(d.county)); })
+        		 .style("fill-opacity", 0.57);
+        bubbleSVG.append("g").selectAll("text").data(initial_bubble.slice(1))
+        		 .enter()
+      			 .append("text")
+				 .attr("x", 635)
+        		 .attr("y", function(d,i){ return i*20+10+10;})
+        		 .style("font-size","10px")
+        		 .text(function(d){return d.county;});
+        //console.log(initial_bubble[0]);
+	}
+	
+	function draw_InitBubble()
+	{	
+		var div = d3.select("body").append("div")   
+				    .attr("class", "tooltip")               
+				    .style("opacity", 0);
+	    var round = d3.format(".2s");
+		var allBubble=bubbleSVG.append("g").selectAll("circle");
+		var circles = allBubble.data(initial_bubble.slice(1));
+   			circles.enter()
+   			       .append("circle")
+   			       .attr("id",function(d) { return "c"+county.indexOf(d.county).toString();})
+   			 	   .attr("cx", function(d) { return x(d.sale_num);})
+       			   .attr("cy", function(d) { return y(d.mean_price);})
+       			   .attr("r", function(d) { return Math.sqrt((d.mean_sqft- squareMin)/squareInterval*square/Math.PI); })	
+       			   .attr("transform", "translate(" + (padding + 10) + "," + (-padding) + ")")
+       			   .attr("fill", function(d){ return color(county.indexOf(d.county));})
+				   .style("fill-opacity", 0.57)
+				   .on("mouseover", function(d) { 
+							 d3.select(this)
+							   .style("stroke", "black")
+							   .style("stroke-width", "2px"); 
+           					 div.transition()        
+				                .duration(200)      
+				                .style("opacity", .9);      
+				             div.html("<b><em>"+d.county+"</em></b><br/><b> Sale numbers</b>: &nbsp<i>"+d.sale_num + "</i><br/><b>Average price</b>: &nbsp$<i>"  +round(d.mean_price)+ "</i><br/><b>Average sqft</b>:  &nbsp<i>"  +round(d.mean_sqft)+"</i><br/><b>Price per sqft:&nbsp</b><i>$"+round(d.mean_price/d.mean_sqft)+"<\i>")  
+				                .style("left", (d3.event.pageX) + "px")     
+				                .style("top", (d3.event.pageY - 28) + "px");    
+	            			})                  
+			        .on("mouseout", function(d) { 
+			       			 d3.select(this)
+							   .style("stroke", "")
+							   .style("stroke-width", "0px");       
+			             div.transition()        
+			                .duration(500)      
+			                .style("opacity", 0);   
+			        });
+			  circles.exit().remove();
+			  
+			  var textMonth=bubbleSVG.append("g").selectAll("text")
+			  			.data(initial_bubble.slice(0,1));
+			  	  textMonth.enter()
+			  			.append("text")
+			  			.classed("showMonth",true) 
+					  	.style("font-size", "35px")
+					  	.attr("x", 70)
+					  	.attr("y", 20)
+					  	.text(function(d){return new_format(format.parse(d.month));}); 
+				textMonth.exit().remove();	 				
+	}
+	
+	function update_Bubble(data)
+	{
+		 new_data=data.slice(1);
+		 month_data=data.slice(0,1);
+		 var allBubble=d3.select("#BubbleChart").select("svg").select("g").selectAll("circle");
+		 var circles = allBubble.data(new_data,function(d){return new_data.indexOf(d);});
+   			 circles.transition()
+          		    .duration(1000)
+          		    .delay(200)
+          		    .attr("cx", function(d) { return x(d.sale_num);})
+       			    .attr("cy", function(d) { return y(d.mean_price);})
+       			    .attr("r", function(d) { return Math.sqrt((d.mean_sqft- squareMin)/squareInterval*square/Math.PI); })	
+       			    .attr("transform", "translate(" + (padding + 10) + "," + (-padding) + ")")
+       			    .attr("fill", function(d){ return color(county.indexOf(d.county));})
+					.style("fill-opacity", 0.57);
+			
+			console.log("drawPic")		;
+			var textMonth=d3.select("#BubbleChart").select("svg").select("g").select("text.showMonth").data(month_data);
+		       	textMonth.transition()
+          		    	.duration(1000)
+          		    	.delay(200)
+					  	.style("font-size", "35px")
+					  	.attr("x", 70)
+					  	.attr("y", 20)
+					  	.text(function(d){return new_format(format.parse(d.month));});	
+				
+	}
+
+	function initWordText(myDraw)
+	{
+		//$("#CountyText").empty();
+		d3.layout.cloud().size([document.body.clientWidth*0.4,document.body.clientHeight*0.4])
+	      .words(initial_bubble.slice(0))
+	      //.rotate(function() { return ~~(Math.random() * 2) * 15; })
+	      .font("Impact")
+	      .fontSize(function(d) { return (d.mean_price/d.mean_sqft-min_sale_num)/interval_sale_num*40+10; })
+	      .on("end", myDraw)
+	      .start();
+	}
+
+	function draw(words)
+	{
+	   	var test= d3.select("#CountyText")
+	   				.append("svg")
+			        .attr("width", document.body.clientWidth*0.4)
+			        .attr("height",document.body.clientHeight*0.6)
+			        //.style( "margin-left","auto")
+			        //.style( "margin-right","10%")
+			        .append("g")
+	        		.attr("transform", "translate(200,130)")
+	      			.selectAll("text")
+	        		.data(words);
+	        
+		test.enter()
+	      	.append("text")	      	
+		    .transition()
+		    .duration(0)
+		    .delay(200)
+		    .attr("id",function(d){return "t"+county.indexOf(d.county).toString();})
+	        .style("font-size", function(d) { return (d.mean_price/d.mean_sqft-min_sale_num)/interval_sale_num*50+10 + "px"; })
+	        .style("font-family", "Impact")
+	        .style("fill", function(d) { return color(county.indexOf(d.county)); })
+	        .attr("text-anchor", "middle")
+	        .attr("transform", function(d) {
+	           var index=county.indexOf(d.county);
+         			 return "translate(" + [95*Math.cos(index*40),95*Math.sin(index*40)] + ")rotate(" + 0 + ")";
+	        })
+	        .text(function(d) { return d.county; })
+	        .style("fill-opacity", 0.57);
+	     test.exit().remove();
+	}
+	  
+	function updateDraw(words) {	
+  		var test= d3.select("#CountyText")
+  		 			.select("svg")
+					.select("g")
+					.selectAll("text")
+					.data(words,function(d){return words.indexOf(d);});
+    
+		test.transition()
+		    .duration(1000)
+		    .delay(200)
+	        .style("font-size", function(d) { return (d.mean_price/d.mean_sqft-min_sale_num)/interval_sale_num*50+10 + "px"; })
+	        //.style("font-size","15px")
+	        .style("font-family", "Impact")
+	        .style("fill", function(d) { return color(county.indexOf(d.county)); })
+	        .attr("text-anchor", "middle")
+	        .attr("transform", function(d) {
+	        		 var index=county.indexOf(d.county);
+         			 return "translate(" + [95*Math.cos(index*40),95*Math.sin(index*40)] + ")rotate(" + 0 + ")";
+        			})
+        	.text(function(d) { return d.county; })
+         	.style("fill-opacity", 0.57);
+      	 test.exit().remove();
+ 	}
+ 	
+ 	function useTheData(doc)
+	{
+		  // Geodata handling goes here, using JSON properties of the doc object
+		  if(doc!='')
+		  {
+			  //geoXmlDoc = doc;
+			  for (var i = 0; i < doc[0].placemarks.length; i++)
+			  {
+			   	 var placemark = doc[0].placemarks[i];
+			   	 if (placemark.polygon)  
+			   	 {
+			    	var kmlStrokeColor = kmlColor(placemark.style.color);		    
+				  	var kmlFillColor = kmlColor(placemark.style.fillcolor);
+				    var normalStyle = {
+					        strokeColor: kmlStrokeColor.color,
+					        strokeWeight: placemark.style.width,
+					        strokeOpacity: kmlStrokeColor.opacity,
+					        fillColor: kmlFillColor.color,
+					        fillOpacity: kmlFillColor.opacity
+				    		};
+			    //console.log(placemark.polygon);
+				    placemark.polygon.normalStyle = normalStyle;
+				    polygonMouseover(placemark,placemark.name);
+				    //jQuery('#map_text').append(doc[0].placemarks[i].name + ', ');
+			    }
+			  }
+		  }
+	}		
+		        
+	function kmlColor(kmlIn)
+	{
+	        var kmlColor = {};
+	        if (kmlIn)
+	        {
+	            aa = kmlIn.substr(0, 2);
+	            bb = kmlIn.substr(2, 2);
+	            gg = kmlIn.substr(4, 2);
+	            rr = kmlIn.substr(6, 2);
+	            kmlColor.color = "#" + rr + gg + bb;
+	            kmlColor.opacity = parseInt(aa, 16) / 256;
+	        } 
+	        else
+	        {
+	            // defaults
+	            kmlColor.color = "red";
+	            kmlColor.opacity = 0.45;
+	        }
+	        return kmlColor;
+	  }
+
+	function polygonMouseover(placemarks, text) {
+		var poly=placemarks.polygon;	
+		
+	    google.maps.event.addListener(poly,'mouseover', function(evt) 
+	    {
+	    	if(placemarks.polygon.strokeWeight==2)
+	    	{		
+	    		//.log(county.indexOf(text));
+	    	    var bubbleName="#c"+county.indexOf(text).toString();
+	    	    var textName="#t"+county.indexOf(text).toString();
+	    		var tempBubble=d3.select(bubbleName);
+	    		var tempText=d3.select(textName);	
+	    		console.log(tempText.attr("font-size"));		
+				circle[0].cx=tempBubble.attr("cx");
+				circle[0].cy=tempBubble.attr("cy");
+				circle[0].r=tempBubble.attr("r");
+				//console.log(circle);
+				d3.select("#CountyText").select("svg").select("g").append("text")
+										.attr("id","tempText")
+										.style("font-size",tempText.style("font-size"))
+	        							.style("font-family", "Impact")
+	        							.style("fill", "black")
+	        							.style("fill-opacity","0.6")
+	        							.attr("text-anchor", "middle")
+	       								.attr("transform",tempText.attr("transform") )
+	       								.text(text);
+		    	d3.select("#BubbleChart").select("svg").select("g").data(circle).append("svg:circle")
+		    	 				 .attr("id","tempChoose")
+		    	 				 .attr("cx",function(d){return d.cx;})
+		    	 				 .attr("cy",function(d){return d.cy;})
+		    	 				 .attr("r",function(d){return d.r;})
+		    	 				 .attr("transform", "translate(" + (padding + 10) + "," + (-padding) + ")")
+		    	 				 .style("fill-opacity","0")
+		    	 				 .style("stroke","black")
+		    	 				 .style("stroke-width","10px");
+		   		 poly.setOptions(highlightOptions);
+		   		 
+	   		}
+	   		
+	   		var seq=county.indexOf(text)+1;
+	   		var d=initial_bubble[seq];
+	   		var content="<div style=\"font-size:10pt;\"><b><em>"+d.county+"</em></b><br/><b> Sale numbers</b>: &nbsp<i>"+d.sale_num + "</i><br/><b>Average price</b>: &nbsp$<i>"  +Math.round(d.mean_price)+ "</i><br/><b>Average sqft</b>:  &nbsp<i>"+Math.round(d.mean_sqft)+"</i><br/><b>Price per sqft:&nbsp</b><i>$"+Math.round(d.mean_price/d.mean_sqft)+"<\i></div>";
+		    ib.setContent(content);
+		    ib.setPosition(evt.latLng);
+		    ib.setMap(map);
+		    ib.open();
+	    });
+	  
+	    google.maps.event.addListener(poly,'mouseout', function(evt)
+	    {
+		  	//console.log("mouse out"+text+placemarks.polygon.strokeWeight);
+		  	if(placemarks.polygon.strokeWeight==10)
+		  	{
+		  		 //console.log(placemarks.polygon.strokeWeight);
+		  		 d3.select("#tempChoose").remove();
+		  		 d3.select("#tempText").remove();
+		  		 poly.setOptions(placemarks.polygon.normalStyle);
+		  	}
+		  	
+		    ib.close();
+	  	});
+	}
+</script>
+</html>

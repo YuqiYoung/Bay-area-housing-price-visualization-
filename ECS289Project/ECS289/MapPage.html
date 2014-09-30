@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script src="http://code.jquery.com/jquery-1.3.2.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=visualization"></script>	
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?1.29.1"></script>
+    <script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/trunk/infobubble/src/infobubble.js"></script>
+    
+    <script type="text/javascript" src="http://geoxml3.googlecode.com/svn/branches/polys/geoxml3.js"></script>
+	<script type="text/javascript" src="http://geoxml3.googlecode.com/svn/trunk/ProjectedOverlay.js"></script>
+    <script type="text/javascript" src="ppsHeatmap.json"></script>
+    <script type="text/javascript" src="newBayArea.kml"></script>
+    <script type="text/javascript" src="month.json"></script>
+    <script type="text/javascript" src="Raw.json"></script>
+
+</head>
+<style>
+body{
+	position:absolute;
+	top: 0%;
+	right:0;
+	left:0;
+	width:99%;
+	height:700px;
+	
+}
+ul
+{
+	list-style-type:none;
+	margin:0;
+	padding:0;
+	overflow:hidden;
+}
+li
+{
+	float:left;
+}
+a:link,a:visited
+{
+	display:block;
+	margin:0px;
+	width:140px;
+	height:20px;
+	font-weight:bold;
+	color:#FFFFFF;
+	background-color:#708090;
+	text-align:center;
+	padding:4px;
+	text-decoration:none;
+	text-transform:uppercase;
+}
+
+a:hover,a:active
+{
+	background-color:#9BA6B1;
+}
+
+.stations, .stations svg {
+  position: absolute;
+}
+
+.stations svg {
+  width: 60px;
+  height: 20px;
+  padding-right: 100px;
+  font: 10px sans-serif;
+}
+
+.stations circle {
+	
+}
+#boundary
+{
+	width:100px;
+	height:20px;
+}
+
+#infoBubble
+{
+	position: center;
+}
+
+#main {
+    min-width: 100%;
+    max-width: 100%;
+    height: 100%;
+	margin: 0px auto;
+  	padding: 0px;
+  	border: solid #708090 5px;
+  	-webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+	overflow:auto visible;
+}
+
+#MapChart{
+	float:left;
+	height: 100%;
+ 	width: 90%;
+  	margin: 0;
+	border: solid #708090 5px;
+	border-top:none;
+	border-bottom:none;
+	border-left: none;
+}
+
+#subChart{
+	float:right;
+	height: 100%;
+ 	min-width: 9%;
+ 	max-width: 9%;
+  	margin: 0;
+}
+
+#control
+{
+	border-top: solid #708090 3px;
+	width:100px;
+	padding-top:10px;
+	padding-bottom:10px;
+}
+#radioGroup
+{
+	border-bottom: solid #708090 3px;
+	width:100px;
+	padding-top:10px;
+	padding-bottom:10px;
+}
+
+#headerRadio
+{
+	margin:5px;
+	font-size:small;
+	font-weight:bold;
+	font-family:impact;
+	color:#000000;
+	text-align:center;
+	padding:4px;
+	text-decoration:none;
+	text-transform:uppercase;
+	
+}
+button,select{
+	width:100px;
+	height:20px;
+	font-family: impact;
+	text-align: center;
+}
+.myControlButton {
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:sans-serif;
+	font-size:13px;
+	text-decoration:none;
+	text-transform:uppercase;
+    font-weight:bold;
+}
+.controlButton {
+	background-color:#FFFFFF;
+	border-radius:3px;
+	border:1px solid lightsteelblue;
+	display:inline-block;
+	cursor:pointer;
+	color:lightsteelblue;
+	font-family:sans-serif;
+	font-size:13px;
+	text-transform:uppercase;
+    font-weight:bold;
+    opacity:1;
+}
+
+.controlButton:hover
+{
+	background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #bc3315), color-stop(1, #d0451b));
+	background:-moz-linear-gradient(top, #bc3315 5%, #d0451b 100%);
+	background:-webkit-linear-gradient(top, #bc3315 5%, #d0451b 100%);
+	background:-o-linear-gradient(top, #bc3315 5%, #d0451b 100%);
+	background:-ms-linear-gradient(top, #bc3315 5%, #d0451b 100%);
+	background:linear-gradient(to bottom, #bc3315 5%, #d0451b 100%);
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#bc3315', endColorstr='#d0451b',GradientType=0);
+	background-color:#bc3315;
+	opacity:1;
+}
+</style>
+<body>
+	<div id="Nav">
+		<ul>
+		<li><a href="BubblePage.html">MotionBubble</a></li>
+		<li><a href="InfoMap.html">InfoMap</a></li>
+		</ul>
+	</div>
+	<div id="main">
+		
+		<div id="MapChart">Heatmap
+		</div>
+		<div id="subChart">
+			<div id="radioGroup">
+			<a id="headerRadio">Max-Intensity</a>
+			<input type="radio" name="MAX" value="1500">$1500<br>
+			<input type="radio" name="MAX" value="900" checked>$900<br>
+			<input type="radio" name="MAX" value="750">$750<br>
+			<input type="radio" name="MAX" value="600">$600<br>
+			<input type="radio" name="MAX" value="500">$500<br>
+			<input type="radio" name="MAX" value="400">$400<br>
+			<input type="radio" name="MAX" value="300">$300<br>
+			<input type="radio" name="MAX" value="200">$200<br>
+			<input type="radio" name="MAX" value="200">$150<br>
+			<input type="radio" name="MAX" value="200">$100<br>
+			<input type="radio" name="MAX" value="200">$50<br>
+			</div>
+			
+			<div id="control">
+			<button id="boundary" class=".controlButton" type="button">HIDE</button>
+			<button id="beginButton" class=".controlButton" type="button">PLAY</button>
+		    <div id="selectOpt"></div>
+		    </div>
+			
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+	var geoXmlDoc;
+		var color = d3.scale.ordinal()
+   						.range(["#669900","#FF3300", "#FF9900", "#CC3399", "#9966FF", "#0000FF", "#0099CC", "#006666","#009933"]);
+	var indexDate=1;//for record date
+	var timer;	//for timeout
+	var format=d3.time.format("%Y-%m-%d");
+	var new_format=d3.time.format("%Y-%m");
+	var county=["Alameda","Contra Costa","Marin","Napa","Sonoma","San Mateo","Santa Clara","Solano","San Francisco"];
+	var initial_bubble=[
+		 {"month": "2003-04-01"},
+		 {"county":"Alameda","mean_price":417792.307692308,"mean_sqft":5251.37262357414,"sale_num":329},
+		 {"county":"Contra Costa","mean_price":386597.112860892,"mean_sqft":6092.07260726073,"sale_num":392},
+		 {"county":"Marin","mean_price":609474.358974359,"mean_sqft":6390.07317073171,"sale_num":45},
+		 {"county":"Napa","mean_price":400257.575757576,"mean_sqft":6261.6875,"sale_num":34},
+		 {"county":"Sonoma","mean_price":308329.032258065,"mean_sqft":6001.71140939597,"sale_num":155},		 
+		 {"county":"San Mateo","mean_price":614067.164179104,"mean_sqft":5567.98507462687,"sale_num":144},
+		 {"county":"Santa Clara","mean_price":500123.106060606,"mean_sqft":5314.93308550186,"sale_num":286},
+		 {"county":"Solano","mean_price":308329.032258065,"mean_sqft":6001.71140939597,"sale_num":155},
+		 {"county":"San Francisco","mean_price":583062.5,"mean_sqft":2618.57894736842,"sale_num":33}
+		 
+	];
+	var gradient = [
+    'rgba(0, 255, 255, 0)',
+    'rgba(0, 255, 255, 1)',
+    'rgba(0, 191, 255, 1)',
+    'rgba(0, 127, 255, 1)',
+    'rgba(0, 63, 255, 1)',
+    'rgba(0, 0, 255, 1)',
+    'rgba(0, 0, 223, 1)',
+    'rgba(0, 0, 191, 1)',
+    'rgba(0, 0, 159, 1)',
+    'rgba(0, 0, 127, 1)',
+    'rgba(63, 0, 91, 1)',
+    'rgba(127, 0, 63, 1)',
+    'rgba(191, 0, 31, 1)',
+    'rgba(255, 0, 0, 1)'
+  ];
+	
+	 var select = document.createElement("select");
+     select.setAttribute("id","dateSelect");
+	 //console.log(month.length);
+	 for(var i=0;i<month.length;i++)
+	 {
+	 	select.options[i]= new Option(new_format(format.parse(month[i].month)),i);   
+	 }
+	 select.size = 1;
+     document.getElementById("selectOpt").appendChild(select);	  	
+    $("select").bind("change",changeDate);
+    $("#beginButton").bind("click",pressControlButton);
+    $("#boundary").bind("click",pressBoundaryButton);
+    $('input[type=radio]').bind("change",selectChange);
+	var heatmapData=[];
+	var map = new google.maps.Map(d3.select("#MapChart").node(), {
+			  zoom: 9,
+			  center: new google.maps.LatLng(37.728377, -122.020710),
+			  mapTypeId: google.maps.roadmap,
+			  //:90,
+			  scrollwheel: false,
+			  disableDefaultUI: false
+			});	
+
+	var styles = [
+					  {
+					    stylers: [
+					      { hue: "#00ffe6" },
+					      { saturation: -20 }
+					    ]	
+					  },{
+					    featureType: "road",
+					    elementType: "geometry",
+					    stylers: [
+					      { lightness: 100 },
+					      { visibility: "simplified" }
+					    ]
+					  },{
+					    featureType: "road",
+					    elementType: "labels",
+					    stylers: [
+					      { visibility: "off" }
+					    ]
+					  },{
+						    featureType: "poi.business",
+						    elementType: "labels",
+						    stylers: [
+						      { visibility: "on" }
+						    ]
+						  }
+					];
+		
+	map.setOptions({styles: styles});
+	
+	var highlightOptions = { fillColor: "red", strokeColor: "#ff9900", fillOpacity: 0.7, strokeWeight: 10 };
+	var normalOptions = { fillColor: "red", strokeColor: "#ff9900", fillOpacity: 0.0, strokeWeight: 2 };
+	var ib = new InfoBubble({
+		          shadowStyle: 0,
+		          padding:10,
+		          backgroundColor: '#E0FFFF',
+		          borderRadius: 4,
+		          arrowSize: 10,
+		          borderWidth: 1,
+		          borderColor: 'black',
+		          minWidth:  150,
+				  maxWidth:  150,
+				  minHeight: 100,
+				  maxHeight: 100,
+		          disableAutoPan: true,
+		          hideCloseButton: true,
+		          arrowPosition: 10,
+		          arrowStyle: 2
+		        });
+	var myParser = new geoXML3.parser({
+		map: map,
+		singleInfoWindow:true,
+		suppressInfoWindows: true,
+		afterParse: useTheData});
+    myParser.parse('newBayArea.kml');
+   
+ function selectChange()
+ {
+ 	//alert(this.value);
+ 	renderHeatmap(indexDate, this.value);
+ }  
+    
+ function pressControlButton()
+    {
+    	if(this.innerHTML=="PLAY")
+    	{
+    		begin();
+    		this.innerHTML="PAUSE";
+    	}
+    	else
+    	{
+    		stop();
+    		this.innerHTML="PLAY";
+    	}
+    }
+    
+    function pressBoundaryButton()
+    {
+    	if(this.innerHTML=="SHOW")
+    	{
+    		myParser.showDocument(myParser.docs.placemarks);
+    		//myParser.parse('newBayArea.kml');
+    		this.innerHTML="HIDE";
+    	}
+    	else
+    	{
+    		myParser.hideDocument(myParser.docs.placemarks);
+    		//myParser.parseKmlString('');
+    		this.innerHTML="SHOW";
+    	}
+    }
+    
+function useTheData(doc)
+{
+		  // Geodata handling goes here, using JSON properties of the doc object
+		  geoXmlDoc = doc;
+		  for (var i = 0; i < doc[0].placemarks.length; i++)
+		  {
+		   	 var placemark = doc[0].placemarks[i];
+		   	 if (placemark.polygon)  
+		   	 {
+		    	var kmlStrokeColor = kmlColor(placemark.style.color);		    
+			  	var kmlFillColor = kmlColor(placemark.style.fillcolor);
+			    var normalStyle = {
+				        strokeColor: kmlStrokeColor.color,
+				        strokeWeight: placemark.style.width,
+				        strokeOpacity: kmlStrokeColor.opacity,
+				        fillColor: kmlFillColor.color,
+				        fillOpacity: kmlFillColor.opacity
+			    		};
+		    //console.log(placemark.polygon);
+			    placemark.polygon.normalStyle = normalStyle;
+			    polygonMouseover(placemark,placemark.name);
+			    //jQuery('#map_text').append(doc[0].placemarks[i].name + ', ');
+		    }
+		  }
+}
+		
+		        
+function kmlColor(kmlIn)
+{
+        var kmlColor = {};
+        if (kmlIn)
+        {
+            aa = kmlIn.substr(0, 2);
+            bb = kmlIn.substr(2, 2);
+            gg = kmlIn.substr(4, 2);
+            rr = kmlIn.substr(6, 2);
+            kmlColor.color = "#" + rr + gg + bb;
+            kmlColor.opacity = parseInt(aa, 16) / 256;
+        } 
+        else
+        {
+            // defaults
+            kmlColor.color = "red";
+            kmlColor.opacity = 0.45;
+        }
+        return kmlColor;
+  }
+
+function polygonMouseover(placemarks, text) {
+	var poly=placemarks.polygon;	
+    google.maps.event.addListener(poly,'mouseover', function(evt) 
+    {
+    	var seq=county.indexOf(text)+1;
+   		var d=initial_bubble[seq];
+    	if(placemarks.polygon.strokeWeight==2)
+    	{
+	    	 //console.log(placemarks.polygon.strokeWeight);
+	    	 highlightOptions.fillColor=color(county.indexOf(d.county));
+	   		 poly.setOptions(highlightOptions);
+   		}
+   		var content="<div style=\"font-size:10pt;\"><b><em>"+d.county+"</em></b><br/><b> Sale numbers</b>: &nbsp<i>"+d.sale_num + "</i><br/><b>Average price</b>: &nbsp$<i>"  +Math.round(d.mean_price)+ "</i><br/><b>Average sqft</b>:  &nbsp<i>"+Math.round(d.mean_sqft)+"</i><br/><b>Price per sqft:&nbsp</b><i>$"+Math.round(d.mean_price/d.mean_sqft)+"<\i></div>";
+	    ib.setContent(content);
+	    ib.setPosition(evt.latLng);
+	    ib.setMap(map);
+	    ib.open();
+    });
+  
+    google.maps.event.addListener(poly,'mouseout', function(evt)
+    {
+	  	//console.log("mouse out"+text+placemarks.polygon.strokeWeight);
+	  	if(placemarks.polygon.strokeWeight==10)
+	  	{
+	  		 //console.log(placemarks.polygon.strokeWeight);
+	  		 poly.setOptions(placemarks.polygon.normalStyle);
+	  	}
+	  	
+	    ib.close();
+  	});
+}
+	/*var CommonInfoWindow = new google.maps.InfoWindow({"maxWidth": 500});
+	var ctaLayer = new google.maps.KmlLayer({
+    url: 'http://www.yyqlovelsm.com/files/89832108.kml',
+    suppressInfoWindows:true
+  			});
+    ctaLayer.setMap(map);
+    google.maps.event.addListener(ctaLayer, 'click', function(kmlMouseEvent) {
+    	CommonInfoWindow.close();
+    	var text = kmlMouseEvent.featureData.name;
+    	for(var i=1;i<10;i++)
+    	{
+    		if(initial_bubble[i].county==text)
+    		{
+    			CommonInfoWindow.setOptions({ "position":kmlMouseEvent.latLng,
+		    				"pixelOffset":kmlMouseEvent.pixelOffset,
+							"content": "<b>"+text+"</b></br>"+sale });
+       			CommonInfoWindow.open(map);
+    			break;
+    		}
+    	}
+    });*/
+    
+	var heatmap;
+	initHeatmap(indexDate,900);
+	function initHeatmap(index, maxHeatIntensity)
+	{
+		heatmapData=[];
+		for(var i=0;i<ppsHeatmap[index].length;i++)
+		{
+			var latLng = new google.maps.LatLng(ppsHeatmap[index][i].lat,ppsHeatmap[index][i].long);
+	 		var magnitude = ppsHeatmap[index][i].price_per_square;
+	 		 //console.log(Math.log(magnitude)/Math.log(18000)*1);
+	 		var weightedLoc = {
+	      		location: latLng,
+	      		weight: magnitude};
+	      	heatmapData.push(weightedLoc);
+		}
+		
+		heatmap = new google.maps.visualization.HeatmapLayer({
+									    data: heatmapData,
+									    gradient:gradient,
+									    maxIntensity: maxHeatIntensity,
+									    dissipating: true,
+									    radius:2.7,
+									    opacity:0.6,
+									    map: map
+									  });
+									 
+	}
+	
+	function renderHeatmap(index, maxHeatIntensity)
+	{
+		heatmapData=[];
+		for(var i=0;i<ppsHeatmap[index].length;i++)
+		{
+			var latLng = new google.maps.LatLng(ppsHeatmap[index][i].lat,ppsHeatmap[index][i].long);
+	 		var magnitude = ppsHeatmap[index][i].price_per_square;
+	 		var weightedLoc = {
+	      		location: latLng,
+	      		weight:magnitude};
+	      	heatmapData.push(weightedLoc);
+		}
+		//console.log( Math.log2(2));
+		heatmap.maxIntensity=maxHeatIntensity;
+		heatmap.setData(heatmapData);
+	}
+	
+	function changeDate()
+	{
+		var maxInten=$('input[name=MAX]:checked').val();
+  		var myselect = document.getElementById("dateSelect");
+  		var seq=myselect.options[myselect.selectedIndex].value;
+    	//document.getElementById("year").innerHTML="Year "+myselect.options[myselect.selectedIndex].text;
+    	indexDate=Number(seq);
+    	initial_bubble[0].month=housing_bubble[Number(seq)].month;
+    	for(var i=0;i<9;i++)
+    	{
+    		var county_name=county[i];
+    		//console.log(String(county_name));
+    		initial_bubble[i+1].mean_price=housing_bubble[Number(seq)][String(county_name)].mean_price;
+   			initial_bubble[i+1].mean_sqft=housing_bubble[Number(seq)][String(county_name)].mean_sqft;
+   			initial_bubble[i+1].sale_num=housing_bubble[Number(seq)][String(county_name)].sale_num;
+    	}
+    	indexDate=Number(seq);
+    	renderHeatmap(indexDate,maxInten);
+	}
+
+	function stop()
+	{	
+		window.clearInterval(timer);
+     	     	timer=null;
+	}
+    
+    function begin()
+    {
+    	timer= window.setInterval(timecount,2000);
+    }
+
+	function timecount()
+	{
+			 var maxInten=$('input[name=MAX]:checked').val();
+			 document.getElementById("dateSelect").options[indexDate].selected=true;
+			 renderHeatmap(indexDate,maxInten);
+			 
+     	     indexDate=indexDate+1;
+     	     if(indexDate==38)
+     	     {
+     	     	window.clearInterval(timer);
+     	     	timer=null;
+     	     	indexDate=0;
+     	     }
+     	       	     	
+         	
+	}
+	
+	
+	
+    </script>
+</script>
+</html>
